@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\Dataset;
+use App\Models\Transaction;
 use App\Imports\TransactionsImport;
+use App\Services\DummyDataService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class DatasetController extends Controller
@@ -81,5 +84,54 @@ class DatasetController extends Controller
         return response($csv)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="sales_data_template.csv"');
+    }
+
+    /**
+     * Generate dummy transaction data for testing
+     */
+    public function generateDummyData(Project $project, DummyDataService $dummyDataService)
+    {
+        $this->authorize('update', $project);
+
+        try {
+            DB::beginTransaction();
+
+            // Generate dummy transactions
+            $transactions = $dummyDataService->generateTransactions(250);
+            
+            // Save transactions to database
+            $transactionCount = 0;
+            foreach ($transactions as $transaction) {
+                foreach ($transaction['items'] as $item) {
+                    Transaction::create([
+                        'project_id' => $project->id,
+                        'transaction_id' => $transaction['transaction_id'],
+                        'items' => json_encode([$item]),
+                    ]);
+                }
+                $transactionCount++;
+            }
+
+            // Create dataset record
+            $dataset = Dataset::create([
+                'project_id' => $project->id,
+                'file_name' => 'Dummy Data - Generated at ' . now()->format('Y-m-d H:i:s'),
+                'storage_path' => null,
+                'row_count' => $transactionCount,
+                'imported_at' => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('projects.show', $project)
+                ->with('success', "Successfully generated {$transactionCount} dummy transactions with realistic retail products!");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return back()
+                ->withErrors(['error' => 'Error generating dummy data: ' . $e->getMessage()]);
+        }
     }
 }

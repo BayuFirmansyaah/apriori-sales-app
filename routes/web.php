@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     // Dataset routes
     Route::get('projects/{project}/import', [\App\Http\Controllers\DatasetController::class, 'import'])->name('datasets.import');
     Route::post('projects/{project}/import', [\App\Http\Controllers\DatasetController::class, 'store'])->name('datasets.store');
+    Route::post('projects/{project}/generate-dummy', [\App\Http\Controllers\DatasetController::class, 'generateDummyData'])->name('datasets.generate-dummy');
     Route::get('download-template', [\App\Http\Controllers\DatasetController::class, 'downloadTemplate'])->name('datasets.template');
     
     // Apriori analysis routes
