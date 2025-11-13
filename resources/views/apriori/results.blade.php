@@ -93,7 +93,7 @@
                 </div>
             </div>
 
-            <!-- Charts Section (Skeleton) -->
+            <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Top Rules by Support Chart -->
                 <div class="bg-white overflow-hidden rounded-xl border border-gray-200">
@@ -110,15 +110,8 @@
                             </div>
                         </div>
                         
-                        <!-- Chart Skeleton -->
-                        <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                            <div class="text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                                </svg>
-                                <p class="mt-2 text-sm text-gray-500">Bar Chart</p>
-                                <p class="text-xs text-gray-400">Coming soon with Chart.js integration</p>
-                            </div>
+                        <div class="h-80">
+                            <canvas id="supportChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -138,16 +131,31 @@
                             </div>
                         </div>
                         
-                        <!-- Chart Skeleton -->
-                        <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                            <div class="text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
-                                </svg>
-                                <p class="mt-2 text-sm text-gray-500">Scatter Plot</p>
-                                <p class="text-xs text-gray-400">Coming soon with Chart.js integration</p>
-                            </div>
+                        <div class="h-80">
+                            <canvas id="scatterChart"></canvas>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item Frequency Pie Chart -->
+            <div class="bg-white overflow-hidden rounded-xl border border-gray-200">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Top 10 Most Frequent Items</h3>
+                            <p class="text-sm text-gray-600">Items appearing most in association rules</p>
+                        </div>
+                        <div class="bg-green-100 rounded-lg p-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="h-96">
+                        <canvas id="pieChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -377,4 +385,225 @@
 
         </div>
     </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <script>
+        // Prepare data from Laravel
+        const topRulesBySupport = @json($topRulesBySupport);
+        const scatterData = @json($scatterData);
+        const pieChartData = @json($pieChartData);
+        
+        // Helper function to truncate long labels
+        function truncateLabel(label, maxLength = 30) {
+            if (label.length <= maxLength) return label;
+            return label.substring(0, maxLength) + '...';
+        }
+        
+        // 1. Bar Chart - Top Rules by Support
+        const supportCtx = document.getElementById('supportChart');
+        if (supportCtx && topRulesBySupport.length > 0) {
+            new Chart(supportCtx, {
+                type: 'bar',
+                data: {
+                    labels: topRulesBySupport.map(r => truncateLabel(r.label, 25)),
+                    datasets: [{
+                        label: 'Support (%)',
+                        data: topRulesBySupport.map(r => r.support),
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return topRulesBySupport[context[0].dataIndex].label;
+                                },
+                                label: function(context) {
+                                    const rule = topRulesBySupport[context.dataIndex];
+                                    return [
+                                        `Support: ${rule.support}%`,
+                                        `Confidence: ${rule.confidence}%`,
+                                        `Lift: ${rule.lift}x`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Support (%)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 2. Scatter Plot - Confidence vs Lift
+        const scatterCtx = document.getElementById('scatterChart');
+        if (scatterCtx && scatterData.length > 0) {
+            new Chart(scatterCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Rules',
+                        data: scatterData,
+                        backgroundColor: function(context) {
+                            const lift = context.parsed.y;
+                            if (lift > 1.5) return 'rgba(34, 197, 94, 0.6)'; // green
+                            if (lift > 1) return 'rgba(59, 130, 246, 0.6)';  // blue
+                            return 'rgba(239, 68, 68, 0.6)'; // red
+                        },
+                        borderColor: function(context) {
+                            const lift = context.parsed.y;
+                            if (lift > 1.5) return 'rgba(34, 197, 94, 1)';
+                            if (lift > 1) return 'rgba(59, 130, 246, 1)';
+                            return 'rgba(239, 68, 68, 1)';
+                        },
+                        borderWidth: 1,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return scatterData[context[0].dataIndex].label;
+                                },
+                                label: function(context) {
+                                    return [
+                                        `Confidence: ${context.parsed.x}%`,
+                                        `Lift: ${context.parsed.y}x`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Confidence (%)'
+                            },
+                            min: 0,
+                            max: 100
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Lift'
+                            },
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 3. Pie Chart - Top Items
+        const pieCtx = document.getElementById('pieChart');
+        if (pieCtx && pieChartData.labels.length > 0) {
+            // Generate colors
+            const colors = [
+                'rgba(59, 130, 246, 0.8)',   // blue
+                'rgba(147, 51, 234, 0.8)',   // purple
+                'rgba(34, 197, 94, 0.8)',    // green
+                'rgba(234, 179, 8, 0.8)',    // yellow
+                'rgba(239, 68, 68, 0.8)',    // red
+                'rgba(236, 72, 153, 0.8)',   // pink
+                'rgba(20, 184, 166, 0.8)',   // teal
+                'rgba(249, 115, 22, 0.8)',   // orange
+                'rgba(139, 92, 246, 0.8)',   // violet
+                'rgba(6, 182, 212, 0.8)'     // cyan
+            ];
+            
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: pieChartData.labels,
+                    datasets: [{
+                        data: pieChartData.values,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('0.8', '1')),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                },
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            return {
+                                                text: `${label} (${value})`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} rules (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </x-app-layout>
