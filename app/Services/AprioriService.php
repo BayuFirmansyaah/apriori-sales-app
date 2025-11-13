@@ -28,7 +28,11 @@ class AprioriService
     {
         $this->transactions = $this->project->transactions()
             ->get()
-            ->pluck('items')
+            ->map(function ($transaction) {
+                // Ensure items is decoded as array
+                $items = $transaction->items;
+                return is_string($items) ? json_decode($items, true) : $items;
+            })
             ->toArray();
         
         $this->totalTransactions = count($this->transactions);
