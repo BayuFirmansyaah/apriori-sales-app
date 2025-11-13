@@ -324,6 +324,27 @@
 
     <!-- Dummy Data Modal -->
     <div id="dummyDataModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                                                {{ count($items) }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="mt-4">
+                            {{ $transactions->links() }}
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+        </div>
+    </div>
+
+    <!-- Dummy Data Confirmation Modal -->
+    <div id="dummyDataModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-lg bg-white">
             <div class="mt-3">
                 <!-- Modal Header -->
@@ -441,13 +462,18 @@
 
         // Dummy data modal functions
         function showDummyDataModal() {
+            console.log('showDummyDataModal called');
             const modal = document.getElementById('dummyDataModal');
+            console.log('Modal element:', modal);
             if (modal) {
                 modal.classList.remove('hidden');
+            } else {
+                console.error('Modal not found!');
             }
         }
 
         function hideDummyDataModal() {
+            console.log('hideDummyDataModal called');
             const modal = document.getElementById('dummyDataModal');
             if (modal) {
                 modal.classList.add('hidden');
@@ -458,12 +484,15 @@
         window.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('dummyDataModal');
             if (modal) {
+                console.log('Modal found in DOM');
                 // Close modal when clicking outside
                 modal.addEventListener('click', function(e) {
                     if (e.target === this) {
                         hideDummyDataModal();
                     }
                 });
+            } else {
+                console.error('Modal not found in DOM!');
             }
         });
     </script>
