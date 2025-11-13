@@ -59,11 +59,15 @@ class ProjectController extends Controller
         
         $project->load([
             'datasets',
-            'transactions' => fn($q) => $q->latest()->take(5),
             'rules' => fn($q) => $q->orderBy('lift', 'desc')->take(10)
         ]);
         
-        return view('projects.show', compact('project'));
+        // Paginate transactions
+        $transactions = $project->transactions()
+            ->orderBy('transaction_id')
+            ->paginate(20);
+        
+        return view('projects.show', compact('project', 'transactions'));
     }
 
     /**

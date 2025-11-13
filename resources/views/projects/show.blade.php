@@ -121,7 +121,39 @@
                 </div>
             </div>
 
-            <!-- Statistics -->
+            <!-- Tabs Navigation -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+                        <button onclick="switchTab('statistics')" 
+                                id="tab-statistics"
+                                class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            Statistics
+                        </button>
+                        <button onclick="switchTab('dataset')" 
+                                id="tab-dataset"
+                                class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                            </svg>
+                            Dataset ({{ $transactions->total() }})
+                        </button>
+                        <button onclick="switchTab('results')" 
+                                id="tab-results"
+                                class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Results ({{ $project->rules->count() }})
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Tab Content: Statistics -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
@@ -185,6 +217,69 @@
                                 </a>
                             </div>
                         @endif
+                    </div>
+                </div>
+            @endif
+
+            <!-- Transaction Data Table -->
+            @if($transactions->count() > 0)
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Transaction Data</h3>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    Showing {{ $transactions->firstItem() }} to {{ $transactions->lastItem() }} of {{ $transactions->total() }} transactions
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Transaction ID
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Items
+                                        </th>
+                                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Item Count
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach($transactions as $transaction)
+                                        @php
+                                            $items = is_string($transaction->items) ? json_decode($transaction->items, true) : $transaction->items;
+                                        @endphp
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {{ $transaction->transaction_id }}
+                                            </td>
+                                            <td class="px-6 py-4 text-sm text-gray-700">
+                                                <div class="flex flex-wrap gap-1">
+                                                    @foreach($items as $item)
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            {{ $item }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                                {{ count($items) }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="mt-4">
+                            {{ $transactions->links() }}
+                        </div>
                     </div>
                 </div>
             @endif
