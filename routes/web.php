@@ -29,6 +29,9 @@ Route::middleware('auth')->group(function () {
     // Apriori analysis routes
     Route::post('projects/{project}/analyze', [\App\Http\Controllers\AprioriController::class, 'analyze'])->name('apriori.analyze');
     Route::get('projects/{project}/results', [\App\Http\Controllers\AprioriController::class, 'results'])->name('apriori.results');
+    
+    // Report routes
+    Route::get('projects/{project}/report/pdf', [\App\Http\Controllers\ReportController::class, 'downloadPdf'])->name('reports.pdf');
 });
 
 require __DIR__.'/auth.php';
