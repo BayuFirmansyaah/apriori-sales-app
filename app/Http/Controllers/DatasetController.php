@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class DatasetController extends Controller
@@ -96,30 +97,36 @@ class DatasetController extends Controller
         try {
             DB::beginTransaction();
 
+            Log::info('Starting dummy data generation for project: ' . $project->id);
+
             // Generate dummy transactions
             $transactions = $dummyDataService->generateTransactions(250);
+            Log::info('Generated ' . count($transactions) . ' transactions');
             
             // Save transactions to database
             $transactionCount = 0;
             foreach ($transactions as $transaction) {
-                foreach ($transaction['items'] as $item) {
-                    Transaction::create([
-                        'project_id' => $project->id,
-                        'transaction_id' => $transaction['transaction_id'],
-                        'items' => json_encode([$item]),
-                    ]);
-                }
+                // Save as one row per transaction with items as JSON array
+                Transaction::create([
+                    'project_id' => $project->id,
+                    'transaction_id' => $transaction['transaction_id'],
+                    'items' => json_encode($transaction['items']), // Save all items as JSON
+                ]);
                 $transactionCount++;
             }
+
+            Log::info('Saved ' . $transactionCount . ' transactions to database');
 
             // Create dataset record
             $dataset = Dataset::create([
                 'project_id' => $project->id,
                 'file_name' => 'Dummy Data - Generated at ' . now()->format('Y-m-d H:i:s'),
-                'storage_path' => null,
+                'storage_path' => 'generated/dummy_data', // Set path for generated data
                 'row_count' => $transactionCount,
                 'imported_at' => now(),
             ]);
+
+            Log::info('Created dataset record: ' . $dataset->id);
 
             DB::commit();
 
@@ -129,6 +136,8 @@ class DatasetController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error generating dummy data: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
             
             return back()
                 ->withErrors(['error' => 'Error generating dummy data: ' . $e->getMessage()]);
